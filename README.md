@@ -48,7 +48,7 @@ reporta sus hallazgos sin bloquear; Gitleaks y el control de vulnerabilidades
 críticas de Trivy sí pueden impedir el despliegue. Un fallo de seguridad es
 posible y esperado en esta demostración con vulnerabilidades intencionales.
 
-El despliegue queda desactivado por defecto en esta copia. Para habilitarlo,
+El despliegue en este repositorio está conectado a Render mediante GitHub Actions. Para habilitarlo en otra copia,
 configura la variable de GitHub Actions `ENABLE_RENDER_DEPLOY=true` y los
 secretos de Render indicados abajo. Las pruebas y escaneos funcionan sin Render.
 
@@ -154,7 +154,7 @@ trivy config .
 
 ## ☁️ Despliegue
 
-App desplegada en: **[https://vulnerable-demo-api.onrender.com](https://vulnerable-demo-api.onrender.com)**
+App desplegada en: **[https://articulo-marca-usher.onrender.com](https://articulo-marca-usher.onrender.com)**
 
 ## 🔐 Configurar GitHub Secrets
 

@@ -35,7 +35,11 @@ app.get('/', (req, res) => {
 // Health check
 // ------------------------------------------------
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    revision: process.env.RENDER_GIT_COMMIT || null
+  });
 });
 
 // ------------------------------------------------

@@ -198,10 +198,10 @@ jobs:
             echo "⚠️  RENDER_DEPLOY_HOOK_URL no configurado en GitHub Secrets."
             echo "   → Ve a Settings → Secrets → Actions y agrega RENDER_DEPLOY_HOOK_URL"
             echo "   → Obtén la URL en tu servicio de Render: Settings → Deploy Hook"
-            exit 0
+            exit 1
           fi
           echo "🚀 Disparando deploy en Render..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+          HTTP_STATUS=$(curl --max-time 30 -s -o /dev/null -w "%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             "$DEPLOY_HOOK")
           echo "Render respondió con status: $HTTP_STATUS"
@@ -216,17 +216,21 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
         run: |
           if [ -z "$APP_URL" ]; then
-            echo "⚠️  APP_URL no configurado — saltando verificación de salud."
-            exit 0
+            echo "❌ APP_URL no configurado."
+            exit 1
           fi
-          echo "⏳ Esperando que el servicio esté disponible (30s)..."
-          sleep 30
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/health")
-          if [ "$STATUS" = "200" ]; then
-            echo "✅ App disponible en $APP_URL"
-          else
-            echo "⚠️  Health check devolvió status $STATUS (puede estar arrancando aún)"
-          fi
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --max-time 15 "$APP_URL/health" -o health.json; then
+              if jq -e --arg revision "$GITHUB_SHA" '.status == "ok" and .revision == $revision' health.json > /dev/null; then
+                echo "✅ Nueva versión disponible en $APP_URL"
+                exit 0
+              fi
+            fi
+            echo "Esperando la nueva versión ($attempt/30)..."
+            sleep 10
+          done
+          echo "❌ La nueva versión no respondió correctamente dentro del plazo."
+          exit 1
 
       - name: Create deployment summary
         run: |

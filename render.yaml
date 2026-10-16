@@ -3,15 +3,18 @@
 
 services:
   - type: web
-    name: vulnerable-demo-api
+    name: articulo-marca-usher
     runtime: node
     region: oregon
     plan: free
     rootDir: app
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    autoDeployTrigger: off # GitHub Actions activa el Deploy Hook tras los controles
     healthCheckPath: /health
     envVars:
+      - key: NODE_VERSION
+        value: '22'
       - key: NODE_ENV
         value: production
       - key: PORT
