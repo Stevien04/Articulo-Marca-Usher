@@ -2,7 +2,7 @@
 
 > **Proyecto académico** que demuestra cómo integrar herramientas de seguridad (SAST, detección de secretos y SCA) en un pipeline CI/CD automatizado.
 
-[![Security Scan](https://github.com/UsherHalanoccaRojas/devsecops-scan-pipeline/actions/workflows/security-scan-deploy.yml/badge.svg)](https://github.com/UsherHalanoccaRojas/devsecops-scan-pipeline/actions)
+[![Security Scan](https://github.com/Stevien04/Articulo-Marca-Usher/actions/workflows/security-scan-deploy.yml/badge.svg)](https://github.com/Stevien04/Articulo-Marca-Usher/actions)
 
 ---
 
@@ -43,7 +43,14 @@ Push → Gitleaks ─┤
 Push → Trivy ───┘
 ```
 
-El despliegue solo ocurre si **los 3 escáneres pasan**.
+El pipeline también ejecuta las pruebas de integración de la API. Semgrep
+reporta sus hallazgos sin bloquear; Gitleaks y el control de vulnerabilidades
+críticas de Trivy sí pueden impedir el despliegue. Un fallo de seguridad es
+posible y esperado en esta demostración con vulnerabilidades intencionales.
+
+El despliegue queda desactivado por defecto en esta copia. Para habilitarlo,
+configura la variable de GitHub Actions `ENABLE_RENDER_DEPLOY=true` y los
+secretos de Render indicados abajo. Las pruebas y escaneos funcionan sin Render.
 
 ## 📁 Estructura del proyecto
 
@@ -66,11 +73,11 @@ devsecops-scan-pipeline/
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/TU_USUARIO/devsecops-scan-pipeline.git
-cd devsecops-scan-pipeline/app
+git clone https://github.com/Stevien04/Articulo-Marca-Usher.git
+cd Articulo-Marca-Usher/app
 
 # 2. Instalar dependencias
-npm install
+npm ci
 
 # 3. Configurar variables de entorno
 cp .env.example .env
@@ -79,6 +86,35 @@ cp .env.example .env
 # 4. Ejecutar
 npm start
 # → API disponible en http://localhost:3000
+```
+
+En Windows (PowerShell), desde la raíz del proyecto:
+
+```powershell
+cd app
+npm ci
+Copy-Item .env.example .env # Solo la primera vez, si no tienes un .env
+npm start
+```
+
+La aplicación carga `app/.env` y crea automáticamente la carpeta, la base
+SQLite y los usuarios de demostración antes de aceptar conexiones.
+`DB_PATH` relativo se interpreta desde `app/`. Puedes entrar con
+`admin` / `admin123` o `alice` / `password1` mediante `POST /login`.
+La raíz muestra la descripción de la API en JSON; no incluye una interfaz gráfica.
+
+Para comprobar el servicio desde otra terminal PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:3000/health
+$login = Invoke-RestMethod http://localhost:3000/login -Method Post -ContentType 'application/json' -Body '{"username":"admin","password":"admin123"}'
+Invoke-RestMethod http://localhost:3000/users -Headers @{ Authorization = "Bearer $($login.token)" }
+```
+
+Las pruebas de integración usan una base temporal y requieren Node.js 18 o superior:
+
+```powershell
+npm test # Desde app/
 ```
 
 ## 🔍 Escanear manualmente

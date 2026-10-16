@@ -1,16 +1,17 @@
 // server.js - API REST vulnerable (INTENCIONAL para demostración DevSecOps)
 // ⚠️  ESTE CÓDIGO CONTIENE VULNERABILIDADES INTENCIONALES - NO USAR EN PRODUCCIÓN
 
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { getDb } = require('./db');
+const { getDb, initDb } = require('./db');
 const _ = require('lodash');
 
 const app = express();
 app.use(express.json());
 
 // ❌ VULNERABILIDAD 1: Secreto JWT hardcodeado (Gitleaks lo detectará)
-const JWT_SECRET = 'hard_coded_jwt_secret_devsecops_demo_2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'hard_coded_jwt_secret_devsecops_demo_2024';
 
 // ❌ VULNERABILIDAD 2: API Keys expuestas en el código (Gitleaks lo detectará)
 // Nota: valores ficticios para demostración académica — no son claves reales
@@ -145,7 +146,9 @@ app.get('/search', authenticate, (req, res) => {
 
     const transform = req.query.transform;
     if (transform) {
-      const fn = ALLOWED_TRANSFORMS[transform];
+      const fn = typeof transform === 'string' &&
+        Object.prototype.hasOwnProperty.call(ALLOWED_TRANSFORMS, transform)
+        ? ALLOWED_TRANSFORMS[transform] : null;
       if (!fn) {
         return res.status(400).json({
           error: 'Invalid transform',
@@ -174,10 +177,23 @@ app.post('/merge', authenticate, (req, res) => {
 // ------------------------------------------------
 // Inicio del servidor
 // ------------------------------------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`API Key en uso: ${STRIPE_API_KEY}`);  // ❌ Log de clave sensible
-});
+async function start(port = process.env.PORT || 3000) {
+  await initDb();
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, () => {
+      console.log(`Server running on port ${server.address().port}`);
+      resolve(server);
+    });
+    server.once('error', reject);
+  });
+}
+
+if (require.main === module) {
+  start().catch((err) => {
+    console.error('Unable to start API:', err.message);
+    process.exit(1);
+  });
+}
 
 module.exports = app;
+module.exports.start = start;

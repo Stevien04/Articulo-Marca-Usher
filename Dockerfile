@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 COPY app/package*.json ./
 
 # Instalar dependencias
-RUN npm install --production
+RUN npm ci --omit=dev
 
 # Crear directorio de datos
 RUN mkdir -p data
@@ -19,7 +19,8 @@ COPY app/ .
 EXPOSE 3000
 
 # Usuario no-root
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && chown -R appuser:appgroup /usr/src/app/data
 USER appuser
 
 # Comando de inicio
